@@ -1,0 +1,546 @@
+// ============================================
+// PulseOps CRM - Prisma Schema
+// ============================================
+// All CRM database models, enums, relations, and indexes
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ──────────────────────────────────────────────
+// ENUMS
+// ──────────────────────────────────────────────
+
+enum UserRole {
+  owner
+  admin
+  member
+  viewer
+  on_call_engineer
+}
+
+enum InvitationStatus {
+  pending
+  accepted
+  expired
+  revoked
+}
+
+enum TicketCategory {
+  bug
+  feature_request
+  technical_support
+  billing
+  general
+}
+
+enum TicketPriority {
+  low
+  medium
+  high
+  critical
+}
+
+enum TicketStatus {
+  open
+  in_progress
+  waiting_on_user
+  resolved
+  closed
+}
+
+enum SubscriptionTier {
+  free
+  pro
+  team
+  enterprise
+}
+
+enum SubscriptionStatus {
+  active
+  canceled
+  past_due
+  trialing
+}
+
+enum ApiMethod {
+  GET
+  POST
+  PUT
+  DELETE
+  PATCH
+}
+
+enum ApiStatus {
+  operational
+  degraded
+  down
+  maintenance
+}
+
+enum IncidentSeverity {
+  critical
+  high
+  medium
+  low
+}
+
+enum IncidentStatus {
+  triggered
+  acknowledged
+  investigating
+  resolved
+  closed
+}
+
+enum IntegrationType {
+  discord
+  webhook
+  email
+}
+
+// ──────────────────────────────────────────────
+// MODELS
+// ──────────────────────────────────────────────
+
+/// Multi-tenant workspace — one per company/team
+model Organization {
+  id                 String             @id @default(uuid()) @db.Uuid
+  name               String             @db.VarChar(255)
+  slug               String             @unique @db.VarChar(100)
+  ownerId            String             @db.Uuid
+  logoUrl            String?            @db.Text
+  website            String?            @db.VarChar(255)
+  industry           String?            @db.VarChar(50)
+  companySize        String?            @db.VarChar(20)
+  subscriptionTier   SubscriptionTier   @default(free)
+  subscriptionStatus SubscriptionStatus @default(active)
+  stripeCustomerId   String?            @db.VarChar(255)
+  billingEmail       String?            @db.VarChar(255)
+  settings           Json?              @default("{}")
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  // Relations
+  users              User[]
+  invitations        Invitation[]
+  activityLogs       ActivityLog[]
+  supportTickets     SupportTicket[]
+  contacts           Contact[]
+  monitoredApis      MonitoredApi[]
+  integrations       Integration[]
+  statusPages        StatusPage[]
+  incidents          Incident[]
+
+  @@map("organizations")
+}
+
+/// Individual team member with role-based access
+model User {
+  id                   String    @id @default(uuid()) @db.Uuid
+  orgId                String    @db.Uuid
+  email                String    @unique @db.VarChar(255)
+  name                 String    @db.VarChar(255)
+  passwordHash         String    @db.Text
+  avatarUrl            String?   @db.Text
+  role                 UserRole  @default(member)
+  phoneNumber          String?   @db.VarChar(20)
+  timezone             String    @default("UTC") @db.VarChar(50)
+  isActive             Boolean   @default(true)
+  lastLoginAt          DateTime?
+  lastActiveAt         DateTime?
+  notificationSettings Json?     @default("{}")
+  onboardingCompleted  Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  // Relations
+  organization           Organization           @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  sentInvitations        Invitation[]            @relation("InvitedBy")
+  activityLogs           ActivityLog[]
+  createdTickets         SupportTicket[]         @relation("TicketCreator")
+  assignedTickets        SupportTicket[]         @relation("TicketAssignee")
+  ticketMessages         TicketMessage[]
+  notificationPreference NotificationPreference?
+  createdContacts        Contact[]
+  acknowledgedIncidents  Incident[]              @relation("IncidentAcknowledger")
+  resolvedIncidents      Incident[]              @relation("IncidentResolver")
+  incidentTimelineEvents IncidentTimelineEvent[]
+
+  @@index([orgId])
+  @@index([email])
+  @@index([orgId, role])
+  @@map("users")
+}
+
+/// Team member invitation with magic link token
+model Invitation {
+  id         String           @id @default(uuid()) @db.Uuid
+  orgId      String           @db.Uuid
+  email      String           @db.VarChar(255)
+  role       UserRole
+  invitedBy  String?          @db.Uuid
+  token      String           @unique @db.VarChar(255)
+  message    String?          @db.Text
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  status     InvitationStatus @default(pending)
+  createdAt  DateTime         @default(now())
+
+  // Relations
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  inviter      User?        @relation("InvitedBy", fields: [invitedBy], references: [id], onDelete: SetNull)
+
+  @@index([orgId, status])
+  @@index([token])
+  @@index([email])
+  @@map("invitations")
+}
+
+/// Complete audit trail of all organization actions
+model ActivityLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  orgId        String   @db.Uuid
+  userId       String?  @db.Uuid
+  action       String   @db.VarChar(100)
+  resourceType String?  @db.VarChar(50)
+  resourceId   String?  @db.Uuid
+  resourceName String?  @db.VarChar(255)
+  changes      Json?
+  metadata     Json?
+  ipAddress    String?  @db.VarChar(45)
+  userAgent    String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  // Relations
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([orgId, createdAt(sort: Desc)])
+  @@index([userId])
+  @@index([resourceType, resourceId])
+  @@index([action])
+  @@map("activity_logs")
+}
+
+/// User-created support ticket
+model SupportTicket {
+  id           String         @id @default(uuid()) @db.Uuid
+  orgId        String         @db.Uuid
+  userId       String?        @db.Uuid
+  ticketNumber String         @unique @db.VarChar(20)
+  title        String         @db.VarChar(255)
+  description  String         @db.Text
+  category     TicketCategory
+  priority     TicketPriority @default(medium)
+  status       TicketStatus   @default(open)
+  assignedTo   String?        @db.Uuid
+  tags         String[]       @default([])
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  resolvedAt   DateTime?
+  closedAt     DateTime?
+
+  // Relations
+  organization Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  creator      User?           @relation("TicketCreator", fields: [userId], references: [id], onDelete: SetNull)
+  assignee     User?           @relation("TicketAssignee", fields: [assignedTo], references: [id], onDelete: SetNull)
+  messages     TicketMessage[]
+
+  @@index([orgId, status])
+  @@index([userId])
+  @@index([assignedTo])
+  @@index([ticketNumber])
+  @@map("support_tickets")
+}
+
+/// Message in a ticket conversation thread
+model TicketMessage {
+  id              String   @id @default(uuid()) @db.Uuid
+  ticketId        String   @db.Uuid
+  userId          String?  @db.Uuid
+  message         String   @db.Text
+  attachments     Json?    @default("[]")
+  isInternal      Boolean  @default(false)
+  isSystemMessage Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  // Relations
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId, createdAt])
+  @@map("ticket_messages")
+}
+
+/// Per-user notification preferences
+model NotificationPreference {
+  id                  String   @id @default(uuid()) @db.Uuid
+  userId              String   @unique @db.Uuid
+  emailEnabled        Boolean  @default(true)
+  smsEnabled          Boolean  @default(false)
+  pushEnabled         Boolean  @default(false)
+  severityFilter      String[] @default(["critical", "high", "medium", "low"])
+  quietHoursEnabled   Boolean  @default(false)
+  quietHoursStart     String?  @db.VarChar(5) // "22:00"
+  quietHoursEnd       String?  @db.VarChar(5) // "08:00"
+  quietHoursTimezone  String?  @db.VarChar(50)
+  dailyDigestEnabled  Boolean  @default(false)
+  weeklyDigestEnabled Boolean  @default(true)
+  incidentUpdates     Boolean  @default(true)
+  mentionNotify       Boolean  @default(true)
+  teamChangesNotify   Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
+}
+
+/// External stakeholder contact
+model Contact {
+  id          String   @id @default(uuid()) @db.Uuid
+  orgId       String   @db.Uuid
+  name        String   @db.VarChar(255)
+  email       String?  @db.VarChar(255)
+  phoneNumber String?  @db.VarChar(20)
+  role        String?  @db.VarChar(100)
+  company     String?  @db.VarChar(255)
+  notes       String?  @db.Text
+  isActive    Boolean  @default(true)
+  createdBy   String?  @db.Uuid
+  createdAt   DateTime @default(now())
+
+  // Relations
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  creator      User?        @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+
+  @@index([orgId])
+  @@index([orgId, isActive])
+  @@map("contacts")
+}
+
+// ──────────────────────────────────────────────
+// PULSEOPS CORE: MONITORING & INCIDENTS
+// ──────────────────────────────────────────────
+
+/// An API endpoint being monitored
+model MonitoredApi {
+  id                   String      @id @default(uuid()) @db.Uuid
+  orgId                String      @db.Uuid
+  name                 String      @db.VarChar(255)
+  endpointUrl          String      @db.Text
+  method               ApiMethod   @default(GET)
+  headers              Json?       @default("{}")
+  body                 Json?       @default("{}")
+  expectedStatusCodes  Int[]       @default([200])
+  timeoutSeconds       Int         @default(10)
+  checkIntervalSeconds Int         @default(60)
+  status               ApiStatus   @default(operational)
+  isActive             Boolean     @default(true)
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  // Relations
+  organization    Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  checks          ApiCheck[]
+  alertRules      AlertRule[]
+  incidents       Incident[]
+  statusPageItems StatusPageItem[]
+
+  @@index([orgId, isActive])
+  @@map("monitored_apis")
+}
+
+/// The result of an individual health check execution
+model ApiCheck {
+  id             String       @id @default(uuid()) @db.Uuid
+  apiId          String       @db.Uuid
+  statusCode     Int?
+  responseTimeMs Int?
+  responseBody   String?      @db.Text
+  errorMessage   String?      @db.Text
+  isSuccess      Boolean      @default(true)
+  checkedAt      DateTime     @default(now())
+
+  api            MonitoredApi @relation(fields: [apiId], references: [id], onDelete: Cascade)
+
+  @@index([apiId, checkedAt(sort: Desc)])
+  @@index([isSuccess])
+  @@map("api_checks")
+}
+
+/// Alert trigger configurations
+model AlertRule {
+  id           String       @id @default(uuid()) @db.Uuid
+  apiId        String       @db.Uuid
+  triggerType  String       @db.VarChar(50) // "downtime", "latency", "error_rate"
+  condition    Json         // e.g. { "threshold": 500, "durationMinutes": 5 }
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+
+  api          MonitoredApi @relation(fields: [apiId], references: [id], onDelete: Cascade)
+  alerts       Alert[]
+
+  @@index([apiId, isActive])
+  @@map("alert_rules")
+}
+
+/// Alert events dispatched to integrations
+model Alert {
+  id           String       @id @default(uuid()) @db.Uuid
+  ruleId       String       @db.Uuid
+  apiId        String       @db.Uuid
+  message      String       @db.Text
+  triggeredAt  DateTime     @default(now())
+  resolvedAt   DateTime?
+
+  rule         AlertRule    @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([apiId, triggeredAt])
+  @@map("alerts")
+}
+
+/// An incident created either automatically via Alerts or manually
+model Incident {
+  id              String           @id @default(uuid()) @db.Uuid
+  orgId           String           @db.Uuid
+  apiId           String?          @db.Uuid
+  title           String           @db.VarChar(255)
+  description     String           @db.Text
+  severity        IncidentSeverity @default(medium)
+  status          IncidentStatus   @default(triggered)
+  triggeredAt     DateTime         @default(now())
+  acknowledgedAt  DateTime?
+  acknowledgedBy  String?          @db.Uuid
+  resolvedAt      DateTime?
+  resolvedBy      String?          @db.Uuid
+  rootCause       String?          @db.Text
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  organization    Organization            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  api             MonitoredApi?           @relation(fields: [apiId], references: [id], onDelete: SetNull)
+  acknowledger    User?                   @relation("IncidentAcknowledger", fields: [acknowledgedBy], references: [id], onDelete: SetNull)
+  resolver        User?                   @relation("IncidentResolver", fields: [resolvedBy], references: [id], onDelete: SetNull)
+  timeline        IncidentTimelineEvent[]
+  integrationLogs IntegrationLog[]
+
+  @@index([orgId, status])
+  @@index([apiId])
+  @@map("incidents")
+}
+
+/// Chronological timeline of an incident's lifecycle
+model IncidentTimelineEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  incidentId  String   @db.Uuid
+  actorId     String?  @db.Uuid
+  eventType   String   @db.VarChar(50) // "status_change", "note_added"
+  content     String   @db.Text
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  incident    Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  actor       User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([incidentId, createdAt(sort: Asc)])
+  @@map("incident_timeline")
+}
+
+/// Customer integrations (Discord webhook, Zapier webhook, Email target)
+model Integration {
+  id            String          @id @default(uuid()) @db.Uuid
+  orgId         String          @db.Uuid
+  type          IntegrationType
+  name          String          @db.VarChar(100)
+  config        Json            // Webhook URLs, channel endpoints, settings
+  isActive      Boolean         @default(true)
+  lastSuccessAt DateTime?
+  lastFailureAt DateTime?
+  failureCount  Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  organization  Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  logs          IntegrationLog[]
+
+  @@index([orgId, type])
+  @@map("integrations")
+}
+
+/// Delivery logs of alerts sent via integrations
+model IntegrationLog {
+  id             String      @id @default(uuid()) @db.Uuid
+  integrationId  String      @db.Uuid
+  incidentId     String?     @db.Uuid
+  status         String      @db.VarChar(50) // "success", "failed"
+  responseStatus Int?
+  responseBody   String?     @db.Text
+  errorMessage   String?     @db.Text
+  attemptedAt    DateTime    @default(now())
+
+  integration    Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  incident       Incident?   @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+
+  @@index([integrationId, attemptedAt(sort: Desc)])
+  @@map("integration_logs")
+}
+
+/// Public status page setup
+model StatusPage {
+  id            String             @id @default(uuid()) @db.Uuid
+  orgId         String             @unique @db.Uuid // One per org
+  subdomain     String             @unique @db.VarChar(100)
+  customDomain  String?            @unique @db.VarChar(255)
+  headerText    String?            @db.Text
+  supportEmail  String?            @db.VarChar(255)
+  isPublic      Boolean            @default(true)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  organization  Organization       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  items         StatusPageItem[]
+  subscribers   StatusSubscriber[]
+
+  @@index([orgId])
+  @@map("status_pages")
+}
+
+/// Specifies which MonitoredApis show on the Status Page
+model StatusPageItem {
+  id           String       @id @default(uuid()) @db.Uuid
+  statusPageId String       @db.Uuid
+  apiId        String       @db.Uuid
+  displayName  String       @db.VarChar(255)
+  displayOrder Int          @default(0)
+  isVisible    Boolean      @default(true)
+
+  statusPage   StatusPage   @relation(fields: [statusPageId], references: [id], onDelete: Cascade)
+  api          MonitoredApi @relation(fields: [apiId], references: [id], onDelete: Cascade)
+
+  @@index([statusPageId, displayOrder])
+  @@map("status_page_items")
+}
+
+/// People who receive emails when the Status Page updates
+model StatusSubscriber {
+  id           String     @id @default(uuid()) @db.Uuid
+  statusPageId String     @db.Uuid
+  email        String     @db.VarChar(255)
+  token        String     @unique @db.VarChar(255)
+  isActive     Boolean    @default(true)
+  subscribedAt DateTime   @default(now())
+
+  statusPage   StatusPage @relation(fields: [statusPageId], references: [id], onDelete: Cascade)
+
+  @@index([statusPageId, email])
+  @@map("status_subscribers")
+}
