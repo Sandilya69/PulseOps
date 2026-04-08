@@ -15,12 +15,17 @@ interface Tokens {
   refreshToken: string;
 }
 
+interface Organization {
+  id: string;
+  name: string;
+}
+
 interface AuthState {
   isAuthenticated: boolean;
   user: User | null;
   tokens: Tokens | null;
-  organization: { id: string; name: string } | null;
-  login: (user: User, tokens: Tokens, organization: any) => void;
+  organization: Organization | null;
+  login: (user: User, tokens: Tokens, organization: Organization | null) => void;
   logout: () => void;
 }
 

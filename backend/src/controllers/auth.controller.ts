@@ -102,3 +102,46 @@ export async function getMe(req: Request, res: Response, next: NextFunction) {
     next(error);
   }
 }
+
+/**
+ * POST /api/auth/google
+ * Verify Google ID Token
+ */
+export async function googleOAuth(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { accessToken } = req.body;
+    if (!accessToken) {
+      throw ApiError.badRequest('Access token is required');
+    }
+    
+    const result = await authService.googleOAuth(accessToken);
+    
+    res.json({
+      success: true,
+      message: 'Google login successful',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * POST /api/auth/github
+ */
+export async function githubOAuth(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { code } = req.body;
+    if (!code) throw ApiError.badRequest('GitHub authorization code is required');
+    
+    const result = await authService.githubOAuth(code);
+    
+    res.json({
+      success: true,
+      message: 'GitHub login successful',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+}

@@ -1,0 +1,14 @@
+
+> frontend@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.2 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.49:3000
+✓ Ready in 1512ms
+
+ GET / 200 in 2.9s (next.js: 1410ms, application-code: 1445ms)
+ GET /login 200 in 354ms (next.js: 212ms, application-code: 142ms)
+ GET /login 200 in 1021ms (next.js: 18ms, application-code: 1003ms)
+ GET / 200 in 132ms (next.js: 24ms, application-code: 108ms)
+ GET /login 200 in 104ms (next.js: 11ms, application-code: 93ms)

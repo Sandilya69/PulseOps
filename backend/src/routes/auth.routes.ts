@@ -25,4 +25,10 @@ router.post('/logout', authenticateToken, authController.logout);
 // GET /api/auth/me — Get current user
 router.get('/me', authenticateToken, authController.getMe);
 
+// POST /api/auth/google — Verify Google ID Token
+router.post('/google', authController.googleOAuth);
+
+// POST /api/auth/github — Verify GitHub Code
+router.post('/github', authController.githubOAuth);
+
 export default router;
