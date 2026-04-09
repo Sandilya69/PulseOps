@@ -1,221 +1,298 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Activity, ArrowRight, Orbit, ShieldCheck, Signal } from "lucide-react";
-
-const telemetryLeft = [
-  "SYNC WINDOW: 04:32 UTC",
-  "INCIDENT FLOW: STABLE",
-  "LATENCY DELTA: -18%",
-  "",
-  "[OPS GRID ARMED]",
-];
-
-const telemetryRight = [
-  "REGIONS: 12 ACTIVE",
-  "TEAMS: 37 CONNECTED",
-  "ALERT DENSITY: LOW",
-  "",
-  "[AUTH CONSOLE READY]",
-];
-
-const missionTags = [
-  "MISSION CONTROL",
-  "AUTOMATED RESPONSE LAYER",
-  "STATUS: NOMINAL",
-];
+import { motion, useScroll, useTransform } from "framer-motion";
+import { ArrowRight, Play, Activity, Bell, Zap, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  
+  // Advanced Scroll Animations
+  const { scrollY } = useScroll();
+  const heroOpacity = useTransform(scrollY, [0, 500], [1, 0]);
+  const heroY = useTransform(scrollY, [0, 500], [0, 100]);
+  const videoScale = useTransform(scrollY, [0, 500], [1, 1.1]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Performance enhancement: Pause video when out of viewport
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          videoRef.current?.play().catch(() => {});
+        } else {
+          videoRef.current?.pause();
+        }
+      },
+      { threshold: 0 }
+    );
+    
+    if (videoRef.current) {
+      observer.observe(videoRef.current);
+    }
+    
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="font-command relative min-h-screen overflow-hidden bg-[#efe7db] text-[#171310]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(215,107,69,0.18),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.7)_0%,rgba(239,231,219,0.96)_55%,rgba(230,216,198,0.9)_100%)]" />
-
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-72 overflow-hidden">
-        <div
-          className="absolute inset-x-[-6%] bottom-10 h-40 bg-[#d65f33]"
-          style={{
-            clipPath:
-              "polygon(0 10%, 22% 28%, 41% 20%, 63% 68%, 100% 0, 100% 100%, 0 100%)",
-          }}
-        />
-        <div
-          className="absolute inset-x-[-4%] bottom-0 h-48 bg-[#315744]"
-          style={{
-            clipPath:
-              "polygon(0 0, 18% 18%, 35% 8%, 49% 40%, 60% 20%, 75% 30%, 87% 12%, 100% 22%, 100% 100%, 0 100%)",
-          }}
-        />
-      </div>
-
-      <header className="font-terminal relative z-20 flex items-center justify-between px-6 py-6 text-[0.8rem] uppercase tracking-[0.22em] sm:px-10">
-        <div className="flex items-center gap-3 text-[#2c2927]">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#d76b45]" />
-          <span>PulseOps // Command Surface</span>
+    <div className="min-h-screen bg-white text-zinc-900 font-sans selection:bg-blue-500/30">
+      
+      {/* NAVBAR */}
+      <header 
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out px-6 md:px-12 py-4 flex items-center justify-between ${
+          isScrolled 
+            ? "bg-zinc-950/80 backdrop-blur-lg border-b border-white/10 py-3 shadow-lg" 
+            : "bg-transparent"
+        }`}
+      >
+        <div className="flex items-center gap-2">
+         <img src="/photos/homelogo.png" alt="PulseOps Logo" className="h-20 md:h-32 w-auto object-contain drop-shadow-md" />
         </div>
-
-        <nav className="flex items-center gap-3 sm:gap-6">
-          <a
-            href="#mission"
-            className="hidden text-[#2c2927]/70 transition hover:text-[#2c2927] md:block"
-          >
-            Manifest
-          </a>
-          <a
-            href="#intel"
-            className="hidden text-[#2c2927]/70 transition hover:text-[#2c2927] md:block"
-          >
-            Telemetry
-          </a>
-          <Link
-            href="/login"
-            className="rounded-full border border-[#2c2927] px-4 py-2 text-[#2c2927] transition hover:bg-[#2c2927] hover:text-[#f6efe5]"
-          >
-            Sign Up
-          </Link>
+        
+        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-300">
+          <Link href="#features" className="hover:text-white transition-colors">Features</Link>
+          <Link href="#solutions" className="hover:text-white transition-colors">Solutions</Link>
+          <Link href="#pricing" className="hover:text-white transition-colors">Pricing</Link>
+          <Link href="#about" className="hover:text-white transition-colors">About</Link>
         </nav>
+        
+        <div className="flex items-center gap-4">
+          <Link href="/login" className="text-sm font-medium text-zinc-300 hover:text-white transition">
+            Login
+          </Link>
+          <Link href="/signup">
+            <Button className="bg-blue-600 hover:bg-blue-500 text-white rounded-full px-6 transition-all shadow-[0_0_15px_rgba(37,99,235,0.4)] hover:shadow-[0_0_25px_rgba(37,99,235,0.6)]">
+              Sign Up
+            </Button>
+          </Link>
+        </div>
       </header>
 
-      <main className="relative z-10 flex min-h-[calc(100vh-88px)] flex-col justify-between px-6 pb-8 sm:px-10">
-        <section
-          id="mission"
-          className="grid flex-1 items-start gap-8 pt-2 lg:grid-cols-[1fr_minmax(0,1.45fr)_1fr] lg:items-center lg:gap-4"
+      {/* HERO SECTION (80vh) */}
+      <section className="relative w-full h-[80vh] overflow-hidden flex items-center justify-center bg-black">
+        {/* Background Video w/ Zoom Scroll Animation */}
+        <motion.div style={{ scale: videoScale }} className="absolute inset-0 w-full h-full">
+          <video
+            ref={videoRef}
+            src="/videos/home.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover"
+          />
+        </motion.div>
+        
+        {/* Dark Gradient Overlay */}
+        <div 
+          className="absolute inset-0 pointer-events-none" 
+          style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.8) 40%, rgba(0,0,0,0.95) 100%)' }} 
+        />
+
+        {/* Hero Content */}
+        <motion.div 
+          style={{ opacity: heroOpacity, y: heroY }}
+          className="relative z-10 flex flex-col items-center text-center px-4 max-w-4xl mt-12"
         >
-          <div className="font-terminal order-2 hidden whitespace-pre-line text-sm leading-7 text-[#342d29]/85 lg:order-1 lg:block">
-            {telemetryLeft.join("\n")}
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+          >
+            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-white mb-6 leading-[1.1]">
+              Real-Time API Monitoring.<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
+                Zero Downtime Stress.
+              </span>
+            </h1>
+          </motion.div>
 
-          <div className="order-1 flex flex-col items-center lg:order-2">
-            <div className="relative mt-6 flex w-full max-w-5xl flex-col items-center justify-center lg:mt-0">
-              <div className="pointer-events-none absolute inset-x-0 top-1/2 -z-10 h-56 -translate-y-1/2 rounded-full bg-[#f5ece2]/90 blur-3xl" />
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
+          >
+            <p className="text-lg md:text-xl text-zinc-300 mb-10 max-w-2xl font-medium leading-relaxed">
+              Highly scalable monitoring, intelligent alerting, and seamless incident management to keep your systems reliable and always available.
+            </p>
+          </motion.div>
 
-              <div className="relative flex h-[20rem] w-[20rem] items-center justify-center sm:h-[28rem] sm:w-[28rem] lg:h-[44rem] lg:w-[44rem]">
-                <div className="absolute inset-0 rounded-full border border-[#d56d45]/35 bg-[radial-gradient(circle_at_52%_34%,#fff9f0_0%,#f7ebdc_42%,#eadcc8_65%,#decebb_100%)] shadow-[inset_0_-40px_120px_rgba(0,0,0,0.05)]" />
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+            className="flex flex-col sm:flex-row gap-4 w-full justify-center"
+          >
+            <Link href="/signup">
+              <Button size="lg" className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white rounded-full px-8 h-14 text-[1rem] shadow-[0_0_20px_rgba(37,99,235,0.4)] border-none">
+                Start Monitoring <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </Link>
+            <Link href="#demo">
+              <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-full px-8 h-14 text-[1rem] bg-white/5 border-white/20 text-white hover:bg-white/10 hover:text-white backdrop-blur">
+                <Play className="mr-2 w-4 h-4 fill-white" /> Request a Demo
+              </Button>
+            </Link>
+          </motion.div>
+        </motion.div>
+      </section>
 
-                <div
-                  className="absolute inset-[6%] rounded-full opacity-95"
-                  style={{
-                    backgroundImage:
-                      "radial-gradient(circle at 18% 18%, #dd7148 0 5%, transparent 5.6%), radial-gradient(circle at 34% 12%, #dd7148 0 7%, transparent 7.6%), radial-gradient(circle at 44% 24%, #dd7148 0 4%, transparent 4.6%), radial-gradient(circle at 60% 18%, #dd7148 0 7%, transparent 7.8%), radial-gradient(circle at 76% 14%, #dd7148 0 5%, transparent 5.6%), radial-gradient(circle at 83% 28%, #dd7148 0 4%, transparent 4.6%), radial-gradient(circle at 70% 38%, #dd7148 0 8%, transparent 8.8%), radial-gradient(circle at 52% 40%, #dd7148 0 6%, transparent 6.7%), radial-gradient(circle at 30% 42%, #dd7148 0 5%, transparent 5.6%), radial-gradient(circle at 20% 56%, #dd7148 0 8%, transparent 8.8%), radial-gradient(circle at 45% 60%, #dd7148 0 7%, transparent 7.8%), radial-gradient(circle at 66% 62%, #dd7148 0 9%, transparent 9.8%), radial-gradient(circle at 84% 52%, #dd7148 0 6%, transparent 6.7%), radial-gradient(circle at 80% 74%, #dd7148 0 8%, transparent 8.8%), radial-gradient(circle at 58% 82%, #dd7148 0 6%, transparent 6.6%), radial-gradient(circle at 34% 78%, #dd7148 0 7%, transparent 7.6%), radial-gradient(circle at 18% 74%, #dd7148 0 6%, transparent 6.7%)",
-                  }}
-                />
-
-                <div
-                  className="absolute inset-[8%] rounded-full opacity-95"
-                  style={{
-                    clipPath: "ellipse(34% 64% at 16% 60%)",
-                    backgroundImage:
-                      "radial-gradient(circle at 26% 16%, #406a57 0 10%, transparent 10.8%), radial-gradient(circle at 44% 28%, #406a57 0 12%, transparent 12.8%), radial-gradient(circle at 24% 38%, #406a57 0 14%, transparent 14.9%), radial-gradient(circle at 56% 46%, #406a57 0 10%, transparent 10.8%), radial-gradient(circle at 22% 56%, #406a57 0 16%, transparent 16.8%), radial-gradient(circle at 46% 68%, #406a57 0 12%, transparent 12.8%), radial-gradient(circle at 18% 78%, #406a57 0 14%, transparent 14.8%), radial-gradient(circle at 48% 86%, #406a57 0 12%, transparent 12.8%)",
-                  }}
-                />
-
-                <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_50%_28%,transparent_0_58%,rgba(0,0,0,0.08)_78%,rgba(0,0,0,0.16)_100%)]" />
-              </div>
-
-              <div className="relative -mt-28 flex max-w-5xl flex-col items-center px-2 text-center sm:-mt-40 lg:-mt-56">
-                <div className="text-[clamp(4.75rem,16vw,12.5rem)] font-bold uppercase leading-none tracking-[-0.08em] text-[#111111]">
-                  PulseOps
-                </div>
-
-                <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-                  {missionTags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="font-terminal rounded-full border border-[#2d2926] bg-[#f3eadf]/90 px-4 py-2 text-[0.7rem] uppercase tracking-[0.22em] text-[#2d2926] sm:text-[0.78rem]"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-
-                <p className="mt-6 max-w-2xl text-sm leading-7 text-[#443933] sm:text-base">
-                  Incident response, telemetry, and team coordination arranged like
-                  a cinematic command deck instead of another flat dashboard.
-                </p>
-
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                  <Link
-                    href="/login"
-                    className="font-terminal inline-flex items-center justify-center rounded-full bg-[#171310] px-6 py-3 text-sm uppercase tracking-[0.22em] text-[#f6efe5] transition hover:translate-y-[-1px] hover:bg-[#2a2522]"
-                  >
-                    Open Auth Console
-                    <ArrowRight className="ml-3 h-4 w-4" />
-                  </Link>
-                  <a
-                    href="#intel"
-                    className="font-terminal inline-flex items-center justify-center rounded-full border border-[#2d2926] px-6 py-3 text-sm uppercase tracking-[0.22em] text-[#2d2926] transition hover:bg-[#2d2926] hover:text-[#f6efe5]"
-                  >
-                    Review Telemetry
-                  </a>
-                </div>
-              </div>
+      {/* WHITE SECTIONS BELOW HERO */}
+      <div className="bg-white relative z-20">
+        
+        {/* LOGOS / SOCIAL PROOF */}
+        <section className="py-12 border-b border-zinc-100 bg-zinc-50/50">
+          <div className="max-w-7xl mx-auto px-6 text-center">
+            <p className="text-sm font-semibold text-zinc-400 uppercase tracking-widest mb-8">Trusted by elite engineering teams</p>
+            <div className="flex flex-wrap justify-center gap-12 opacity-40 grayscale">
+              {/* Replace with actual SVGs or icons */}
+              <div className="text-xl font-bold flex items-center gap-2"><div className="w-6 h-6 bg-zinc-800 rounded-sm" /> Acme Corp</div>
+              <div className="text-xl font-bold flex items-center gap-2"><div className="w-6 h-6 bg-zinc-800 rounded-sm" /> Globex</div>
+              <div className="text-xl font-bold flex items-center gap-2"><div className="w-6 h-6 bg-zinc-800 rounded-full" /> Soylent API</div>
+              <div className="text-xl font-bold flex items-center gap-2"><div className="w-6 h-6 bg-zinc-800 rotate-45" /> Initech</div>
             </div>
-          </div>
-
-          <div className="font-terminal order-3 hidden whitespace-pre-line text-right text-sm leading-7 text-[#342d29]/85 lg:block">
-            {telemetryRight.join("\n")}
           </div>
         </section>
 
-        <section
-          id="intel"
-          className="relative z-10 flex flex-col gap-6 pb-6 pt-6 md:flex-row md:items-end md:justify-between"
-        >
-          <div className="flex items-start gap-4">
-            <div className="rounded-full border border-[#2d2926]/30 bg-[#f7efe6]/80 p-3">
-              <Activity className="h-5 w-5 text-[#d76b45]" />
-            </div>
-            <div>
-              <p className="font-terminal text-[0.75rem] uppercase tracking-[0.24em] text-[#4f433d]">
-                Sector 7
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold text-[#171310]">
-                Escalate faster, resolve cleaner.
-              </h2>
-              <p className="mt-2 max-w-xl text-sm leading-7 text-[#4b4039]">
-                Built for engineers who want the energy of a mission room with
-                the clarity of a modern ops workflow.
-              </p>
-            </div>
+        {/* FEATURES SECTION */}
+        <section id="features" className="py-24 max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-bold text-zinc-900 tracking-tight mb-4">Everything you need to stay online.</h2>
+            <p className="text-lg text-zinc-500 max-w-2xl mx-auto">PulseOps provides an end-to-end mission control room for your infrastructure. Know before your customers do.</p>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <StatusCard
-              icon={<ShieldCheck className="h-4 w-4" />}
-              label="Alert Guard"
-              value="24/7 Coverage"
+          <div className="grid md:grid-cols-3 gap-8">
+            <FeatureCard 
+              icon={<Activity className="w-6 h-6 text-blue-600" />}
+              title="Global Uptime Tracking"
+              desc="Monitor your endpoints from 12+ regions worldwide with custom timeout intervals."
             />
-            <StatusCard
-              icon={<Signal className="h-4 w-4" />}
-              label="Signal Quality"
-              value="98.4% Clean"
+            <FeatureCard 
+              icon={<Bell className="w-6 h-6 text-blue-600" />}
+              title="Intelligent Alerting"
+              desc="Cut the noise. Smart on-call routing policies via Email, SMS, Slack, and Discord."
             />
-            <StatusCard
-              icon={<Orbit className="h-4 w-4" />}
-              label="Routing Mesh"
-              value="12 Regions"
+            <FeatureCard 
+              icon={<ShieldCheck className="w-6 h-6 text-blue-600" />}
+              title="Zero Maintenance"
+              desc="We scale dynamically. You focus on shipping features instead of managing ops tools."
             />
           </div>
         </section>
-      </main>
+
+        {/* WHY PULSEOPS SECTION */}
+        <section id="solutions" className="py-24 max-w-7xl mx-auto px-6 border-t border-zinc-100">
+          <div className="flex flex-col md:flex-row items-center gap-16">
+            <div className="flex-1">
+              <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 tracking-tight mb-6">Designed for speed. <br />Built for scale.</h2>
+              <p className="text-lg text-zinc-600 mb-8 leading-relaxed">
+                Incident response shouldn't be stressful. We built PulseOps to give your entire team the clarity they need during an outage, combining world-class telemetry with instant automated runbooks.
+              </p>
+              <ul className="space-y-4">
+                {['Sub-second global latency detection', 'Real-time collaborative incident war-rooms', 'Automated SLA & performance reporting'].map((text, i) => (
+                  <li key={i} className="flex items-center gap-3 text-zinc-700 font-medium">
+                    <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                      <Zap className="w-3 h-3" />
+                    </div>
+                    {text}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="flex-1 w-full bg-zinc-100 rounded-3xl aspect-[4/3] flex items-center justify-center text-zinc-400 border border-zinc-200 shadow-inner overflow-hidden relative">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(37,99,235,0.05),transparent_70%)]" />
+              <Activity className="w-24 h-24 opacity-20" />
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      {/* FOOTER */}
+      <footer className="bg-zinc-950 text-zinc-400 py-16 border-t border-zinc-800">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-5 gap-8 md:gap-12 mb-16">
+          <div className="col-span-2 md:col-span-1">
+            <img src="/photos/homelogo.png" alt="PulseOps Logo" className="h-12 md:h-16 w-auto object-contain mb-4" />
+            <p className="text-sm leading-relaxed mb-6">Real-time infrastructure monitoring for modern development teams.</p>
+            <div className="flex gap-4">
+              <div className="w-8 h-8 rounded-full bg-zinc-800/80 hover:bg-zinc-700 cursor-pointer transition border border-zinc-700/50" />
+              <div className="w-8 h-8 rounded-full bg-zinc-800/80 hover:bg-zinc-700 cursor-pointer transition border border-zinc-700/50" />
+              <div className="w-8 h-8 rounded-full bg-zinc-800/80 hover:bg-zinc-700 cursor-pointer transition border border-zinc-700/50" />
+            </div>
+          </div>
+          
+          <div>
+            <h4 className="text-white font-semibold mb-4">Platform</h4>
+            <ul className="space-y-3 text-sm">
+              <li><Link href="#" className="hover:text-blue-400 transition">API Monitoring</Link></li>
+              <li><Link href="#" className="hover:text-blue-400 transition">Incident Management</Link></li>
+              <li><Link href="#" className="hover:text-blue-400 transition">On-Call Routing</Link></li>
+              <li><Link href="#" className="hover:text-blue-400 transition">Status Pages</Link></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="text-white font-semibold mb-4">Solutions</h4>
+            <ul className="space-y-3 text-sm">
+              <li><Link href="#" className="hover:text-blue-400 transition">Enterprise</Link></li>
+              <li><Link href="#" className="hover:text-blue-400 transition">Startups</Link></li>
+              <li><Link href="#" className="hover:text-blue-400 transition">E-Commerce</Link></li>
+              <li><Link href="#" className="hover:text-blue-400 transition">Logistics</Link></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="text-white font-semibold mb-4">Resources</h4>
+            <ul className="space-y-3 text-sm">
+              <li><Link href="#" className="hover:text-blue-400 transition">Documentation</Link></li>
+              <li><Link href="#" className="hover:text-blue-400 transition">API Reference</Link></li>
+              <li><Link href="#" className="hover:text-blue-400 transition">Blog</Link></li>
+              <li><Link href="#" className="hover:text-blue-400 transition">Community</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-white font-semibold mb-4">Company</h4>
+            <ul className="space-y-3 text-sm">
+              <li><Link href="#" className="hover:text-blue-400 transition">About Us</Link></li>
+              <li><Link href="#" className="hover:text-blue-400 transition">Careers</Link></li>
+              <li><Link href="#" className="hover:text-blue-400 transition">Legal</Link></li>
+              <li><Link href="#" className="hover:text-blue-400 transition">Contact</Link></li>
+            </ul>
+          </div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-6 border-t border-zinc-800/80 pt-8 flex flex-col md:flex-row justify-between items-center text-sm">
+          <p>&copy; {new Date().getFullYear()} PulseOps Inc. All rights reserved.</p>
+          <div className="flex gap-6 mt-4 md:mt-0">
+            <Link href="#" className="hover:text-white transition">Privacy Policy</Link>
+            <Link href="#" className="hover:text-white transition">Terms of Service</Link>
+            <Link href="#" className="hover:text-white transition">System Status</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
 
-function StatusCard({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string;
-}) {
+function FeatureCard({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
   return (
-    <div className="min-w-[12rem] rounded-[1.5rem] border border-[#2d2926]/15 bg-[#f8f1e7]/70 px-4 py-4 shadow-[0_18px_48px_rgba(74,47,31,0.08)] backdrop-blur">
-      <div className="flex items-center gap-2 text-[#d76b45]">{icon}</div>
-      <p className="font-terminal mt-4 text-[0.68rem] uppercase tracking-[0.24em] text-[#6d5950]">
-        {label}
-      </p>
-      <p className="mt-2 text-lg font-semibold text-[#171310]">{value}</p>
+    <div className="p-8 rounded-3xl bg-zinc-50 border border-zinc-100 shadow-sm hover:shadow-md transition-all hover:-translate-y-1 group">
+      <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-zinc-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+        {icon}
+      </div>
+      <h3 className="text-xl font-bold text-zinc-900 mb-3">{title}</h3>
+      <p className="text-zinc-600 leading-relaxed font-medium">{desc}</p>
     </div>
   );
 }
