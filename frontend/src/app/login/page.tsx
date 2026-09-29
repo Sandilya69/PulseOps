@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import Link from "next/link";
-import { Github, Mail, Moon, Sun } from "lucide-react";
+import { Mail, Moon, Sun } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
 
 import { Button } from "@/components/ui/button";
@@ -62,8 +62,9 @@ export default function LoginPage() {
         );
         router.push("/dashboard");
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Invalid credentials.");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Invalid credentials.";
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -82,8 +83,9 @@ export default function LoginPage() {
           );
           router.push("/dashboard");
         }
-      } catch (error: any) {
-        toast.error(error.response?.data?.message || "Google login failed.");
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Google login failed.";
+        toast.error(message);
       }
     }
   });
@@ -238,7 +240,7 @@ export default function LoginPage() {
           </div>
 
           <p className="text-center mt-8 text-sm text-zinc-600 dark:text-zinc-400 font-medium">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link href="/signup" className="text-blue-600 dark:text-blue-400 hover:underline ml-1">
               Sign up here
             </Link>

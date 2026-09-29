@@ -4,6 +4,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import * as authService from '../services/auth.service';
+import * as invitationService from '../services/invitation.service';
 import { ApiError } from '../middleware/errorHandler.middleware';
 
 /**
@@ -139,6 +140,24 @@ export async function githubOAuth(req: Request, res: Response, next: NextFunctio
     res.json({
       success: true,
       message: 'GitHub login successful',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * POST /api/auth/invitations/:token/accept
+ * Accept an invitation using the magic token
+ */
+export async function acceptInvitation(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await invitationService.acceptInvitation(req.params.token as string, req.user!.id);
+    
+    res.json({
+      success: true,
+      message: 'Successfully joined organization',
       data: result,
     });
   } catch (error) {

@@ -7,6 +7,7 @@ import prisma from '../lib/prisma';
 import { ApiError } from '../middleware/errorHandler.middleware';
 import { canChangeRole } from '../lib/permissions';
 import { activityLogService } from './activityLog.service';
+import { comparePassword, hashPassword } from '../utils/hash';
 
 interface ListUsersParams {
   page: number;
@@ -262,4 +263,32 @@ export async function exportUsersCSV(orgId: string): Promise<string> {
   );
 
   return [header, ...rows].join('\n');
+}
+
+/**
+ * Change current user's password
+ */
+export async function changePassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { passwordHash: true },
+  });
+
+  if (!user) throw ApiError.notFound('User');
+
+  const isValid = await comparePassword(currentPassword, user.passwordHash);
+  if (!isValid) {
+    throw ApiError.unauthorized('Current password is incorrect');
+  }
+
+  const hashedPassword = await hashPassword(newPassword);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash: hashedPassword },
+  });
 }

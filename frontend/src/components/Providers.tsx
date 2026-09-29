@@ -1,6 +1,8 @@
 "use client";
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { QueryProvider } from '@/providers/QueryProvider';
+import { RealtimeProvider } from '@/providers/RealtimeProvider';
 import { ReactNode } from "react";
 
 export default function Providers({ children }: { children: ReactNode }) {
@@ -8,12 +10,16 @@ export default function Providers({ children }: { children: ReactNode }) {
   
   if (!clientId || clientId === "") {
     console.warn("Google Client ID not found. OAuth disabled.");
-    return <>{children}</>;
+    return <QueryProvider><RealtimeProvider>{children}</RealtimeProvider></QueryProvider>;
   }
 
   return (
-    <GoogleOAuthProvider clientId={clientId}>
-      {children}
-    </GoogleOAuthProvider>
+    <QueryProvider>
+      <RealtimeProvider>
+        <GoogleOAuthProvider clientId={clientId}>
+          {children}
+        </GoogleOAuthProvider>
+      </RealtimeProvider>
+    </QueryProvider>
   );
 }

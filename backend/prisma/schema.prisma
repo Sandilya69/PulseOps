@@ -167,6 +167,7 @@ model User {
   assignedTickets        SupportTicket[]         @relation("TicketAssignee")
   ticketMessages         TicketMessage[]
   notificationPreference NotificationPreference?
+  notifications          Notification[]
   createdContacts        Contact[]
   acknowledgedIncidents  Incident[]              @relation("IncidentAcknowledger")
   resolvedIncidents      Incident[]              @relation("IncidentResolver")
@@ -302,6 +303,25 @@ model NotificationPreference {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notification_preferences")
+}
+
+/// Per-user notifications
+model Notification {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid
+  type        String   @db.VarChar(50)
+  title       String   @db.VarChar(255)
+  message     String   @db.Text
+  read        Boolean  @default(false)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("notifications")
 }
 
 /// External stakeholder contact

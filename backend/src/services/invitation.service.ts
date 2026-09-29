@@ -1,4 +1,4 @@
-// ============================================
+yes// ============================================
 // PulseOps CRM - Invitation Service
 // ============================================
 
@@ -7,11 +7,8 @@ import crypto from 'crypto';
 import prisma from '../lib/prisma';
 import { ApiError } from '../middleware/errorHandler.middleware';
 import { activityLogService } from './activityLog.service';
-import { Resend } from 'resend';
+import { sendEmail } from './resend.service';
 
-// Configure Resend using API key from env
-const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key');
-const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@pulseops.com';
 
 /**
  * Invite a user via email
@@ -71,27 +68,22 @@ export async function sendInvitation(
     metadata: { email, role }
   });
 
-  // Send Email
-  if (process.env.RESEND_API_KEY) {
-    const inviteLink = `${process.env.FRONTEND_URL}/invite/${token}`;
-    
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to: email,
-      subject: `You have been invited to join ${org?.name} on PulseOps`,
-      html: `
-        <h2>You've been invited!</h2>
-        <p>${actor.name} has invited you to join <strong>${org?.name}</strong> on PulseOps as a ${role}.</p>
-        ${message ? `<p><em>"${message}"</em></p>` : ''}
-        <br />
-        <a href="${inviteLink}" style="padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px;">Accept Invitation</a>
-        <br /><br />
-        <p>This link will expire in 7 days.</p>
-      `
-    });
-  } else {
-    console.log(`[Email Mock] Simulated sending invite to ${email} (Token: ${token})`);
-  }
+  // Send Email via Centralized Resend Service
+  const inviteLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/invite/${token}`;
+  const subject = `You have been invited to join ${org?.name || 'an Organization'} on PulseOps`;
+  const html = `
+    <div style="font-family: sans-serif; padding: 20px; background-color: #0c0f1d; color: #f1f5f9; border-radius: 8px;">
+      <h2 style="color: #06b6d4; margin-top: 0;">You've been invited!</h2>
+      <p><strong>${actor.name}</strong> has invited you to join the workspace <strong>${org?.name || 'PulseOps'}</strong> on PulseOps as a <strong>${role}</strong>.</p>
+      ${message ? `<p style="padding: 10px; background-color: #1e293b; border-left: 4px solid #06b6d4; border-radius: 4px;"><em>"${message}"</em></p>` : ''}
+      <div style="margin: 25px 0;">
+        <a href="${inviteLink}" style="background-color: #06b6d4; color: #0c0f1d; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Accept Invitation</a>
+      </div>
+      <p style="font-size: 13px; color: #94a3b8;">This invitation link will expire in 7 days.</p>
+    </div>
+  `;
+  await sendEmail(email, subject, html);
+
 
   return invitation;
 }

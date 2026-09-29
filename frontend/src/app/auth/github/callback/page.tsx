@@ -33,8 +33,9 @@ function GithubCallbackHandler() {
           );
           router.push("/dashboard");
         }
-      } catch (error: any) {
-        toast.error(error.response?.data?.message || "Failed to authenticate with GitHub");
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to authenticate with GitHub";
+        toast.error(message);
         router.push("/login");
       }
     };

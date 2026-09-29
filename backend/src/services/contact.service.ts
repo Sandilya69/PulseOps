@@ -13,14 +13,12 @@ export async function createContact(
   orgId: string,
   userId: string,
   data: {
-    firstName: string;
-    lastName: string;
+    name: string;
     email: string;
-    phone?: string;
+    phoneNumber?: string;
+    role?: string;
     company?: string;
-    jobTitle?: string;
-    source?: string;
-    tags?: string[];
+    notes?: string;
   }
 ) {
   const contact = await prisma.contact.create({
@@ -36,7 +34,7 @@ export async function createContact(
     action: 'contact.created',
     resourceType: 'contact',
     resourceId: contact.id,
-    resourceName: `${contact.firstName} ${contact.lastName}`
+    resourceName: contact.name
   });
 
   return contact;
@@ -53,8 +51,7 @@ export async function listContacts(
 
   if (filters.search) {
     where.OR = [
-      { firstName: { contains: filters.search, mode: 'insensitive' } },
-      { lastName: { contains: filters.search, mode: 'insensitive' } },
+      { name: { contains: filters.search, mode: 'insensitive' } },
       { email: { contains: filters.search, mode: 'insensitive' } },
       { company: { contains: filters.search, mode: 'insensitive' } }
     ];
@@ -112,7 +109,7 @@ export async function updateContact(
     action: 'contact.updated',
     resourceType: 'contact',
     resourceId: id,
-    resourceName: `${contact.firstName} ${contact.lastName}`,
+    resourceName: contact.name,
     changes
   });
 
@@ -134,6 +131,6 @@ export async function deleteContact(orgId: string, id: string, userId: string) {
     action: 'contact.deleted',
     resourceType: 'contact',
     resourceId: id,
-    resourceName: `${contact.firstName} ${contact.lastName}`
+    resourceName: contact.name
   });
 }

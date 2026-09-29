@@ -196,7 +196,7 @@ export default function Home() {
             <div className="flex-1">
               <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 tracking-tight mb-6">Designed for speed. <br />Built for scale.</h2>
               <p className="text-lg text-zinc-600 mb-8 leading-relaxed">
-                Incident response shouldn't be stressful. We built PulseOps to give your entire team the clarity they need during an outage, combining world-class telemetry with instant automated runbooks.
+                Incident response shouldn&apos;t be stressful. We built PulseOps to give your entire team the clarity they need during an outage, combining world-class telemetry with instant automated runbooks.
               </p>
               <ul className="space-y-4">
                 {['Sub-second global latency detection', 'Real-time collaborative incident war-rooms', 'Automated SLA & performance reporting'].map((text, i) => (

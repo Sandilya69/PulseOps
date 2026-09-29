@@ -4,13 +4,14 @@
 
 import { Request, Response, NextFunction } from 'express';
 import * as orgService from '../services/organization.service';
+import { getParam } from '../utils/params';
 
 /**
  * GET /api/organizations/:orgId
  */
 export async function getOrganization(req: Request, res: Response, next: NextFunction) {
   try {
-    const org = await orgService.getOrganization(req.params.orgId);
+    const org = await orgService.getOrganization(getParam(req, 'orgId'));
     res.json({ success: true, data: org });
   } catch (error) {
     next(error);
@@ -23,7 +24,7 @@ export async function getOrganization(req: Request, res: Response, next: NextFun
 export async function updateOrganization(req: Request, res: Response, next: NextFunction) {
   try {
     const org = await orgService.updateOrganization(
-      req.params.orgId,
+      getParam(req, 'orgId'),
       req.body,
       req.user!
     );
@@ -38,7 +39,7 @@ export async function updateOrganization(req: Request, res: Response, next: Next
  */
 export async function getOrganizationStats(req: Request, res: Response, next: NextFunction) {
   try {
-    const stats = await orgService.getOrganizationStats(req.params.orgId);
+    const stats = await orgService.getOrganizationStats(getParam(req, 'orgId'));
     res.json({ success: true, data: stats });
   } catch (error) {
     next(error);
@@ -51,7 +52,7 @@ export async function getOrganizationStats(req: Request, res: Response, next: Ne
 export async function transferOwnership(req: Request, res: Response, next: NextFunction) {
   try {
     await orgService.transferOwnership(
-      req.params.orgId,
+      getParam(req, 'orgId'),
       req.body.newOwnerId,
       req.user!
     );
@@ -66,7 +67,7 @@ export async function transferOwnership(req: Request, res: Response, next: NextF
  */
 export async function deleteOrganization(req: Request, res: Response, next: NextFunction) {
   try {
-    await orgService.deleteOrganization(req.params.orgId, req.user!);
+    await orgService.deleteOrganization(getParam(req, 'orgId'), req.user!);
     res.json({ success: true, message: 'Organization deleted' });
   } catch (error) {
     next(error);

@@ -4,13 +4,15 @@
 
 import { Request, Response, NextFunction } from 'express';
 import * as userService from '../services/user.service';
+import { getParam } from '../utils/params';
+import { ApiError } from '../middleware/errorHandler.middleware';
 
 /**
  * GET /api/organizations/:orgId/users — List team members
  */
 export async function listUsers(req: Request, res: Response, next: NextFunction) {
   try {
-    const { orgId } = req.params;
+    const orgId = getParam(req, 'orgId');
     const { page = '1', limit = '20', role, status, search } = req.query;
 
     const result = await userService.listUsers(orgId, {
@@ -32,7 +34,7 @@ export async function listUsers(req: Request, res: Response, next: NextFunction)
  */
 export async function getUser(req: Request, res: Response, next: NextFunction) {
   try {
-    const user = await userService.getUser(req.params.userId, req.params.orgId);
+    const user = await userService.getUser(getParam(req, 'userId'), getParam(req, 'orgId'));
     res.json({ success: true, data: user });
   } catch (error) {
     next(error);
@@ -57,8 +59,8 @@ export async function updateProfile(req: Request, res: Response, next: NextFunct
 export async function changeUserRole(req: Request, res: Response, next: NextFunction) {
   try {
     await userService.changeUserRole(
-      req.params.orgId,
-      req.params.userId,
+      getParam(req, 'orgId'),
+      getParam(req, 'userId'),
       req.body.role,
       req.user!
     );
@@ -74,8 +76,8 @@ export async function changeUserRole(req: Request, res: Response, next: NextFunc
 export async function deactivateUser(req: Request, res: Response, next: NextFunction) {
   try {
     await userService.setUserActiveStatus(
-      req.params.orgId,
-      req.params.userId,
+      getParam(req, 'orgId'),
+      getParam(req, 'userId'),
       false,
       req.user!
     );
@@ -91,8 +93,8 @@ export async function deactivateUser(req: Request, res: Response, next: NextFunc
 export async function reactivateUser(req: Request, res: Response, next: NextFunction) {
   try {
     await userService.setUserActiveStatus(
-      req.params.orgId,
-      req.params.userId,
+      getParam(req, 'orgId'),
+      getParam(req, 'userId'),
       true,
       req.user!
     );
@@ -108,8 +110,8 @@ export async function reactivateUser(req: Request, res: Response, next: NextFunc
 export async function removeUser(req: Request, res: Response, next: NextFunction) {
   try {
     await userService.removeUser(
-      req.params.orgId,
-      req.params.userId,
+      getParam(req, 'orgId'),
+      getParam(req, 'userId'),
       req.user!
     );
     res.json({ success: true, message: 'User removed from organization' });
@@ -123,11 +125,34 @@ export async function removeUser(req: Request, res: Response, next: NextFunction
  */
 export async function exportUsers(req: Request, res: Response, next: NextFunction) {
   try {
-    const csv = await userService.exportUsersCSV(req.params.orgId);
+    const csv = await userService.exportUsersCSV(getParam(req, 'orgId'));
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="team-members.csv"');
     res.send(csv);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * PUT /api/users/me/password — Change own password
+ */
+export async function changePassword(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      throw ApiError.badRequest('Current password and new password are required');
+    }
+
+    if (newPassword.length < 8) {
+      throw ApiError.badRequest('New password must be at least 8 characters');
+    }
+
+    await userService.changePassword(req.user!.id, currentPassword, newPassword);
+
+    res.json({ success: true, message: 'Password changed successfully' });
   } catch (error) {
     next(error);
   }

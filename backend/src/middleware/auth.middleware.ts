@@ -7,7 +7,7 @@ import { verifyAccessToken } from '../utils/jwt';
 import { ApiError } from './errorHandler.middleware';
 import prisma from '../lib/prisma';
 
-// Extend Express Request to include user
+// Extend Express Request to include user and typed params
 declare global {
   namespace Express {
     interface Request {
@@ -17,6 +17,9 @@ declare global {
         email: string;
         name: string;
         role: import('@prisma/client').UserRole;
+      };
+      params: {
+        [key: string]: string;
       };
     }
   }

@@ -4,6 +4,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import * as invitationService from '../services/invitation.service';
+import { getParam } from '../utils/params';
 
 /**
  * POST /api/organizations/:orgId/invitations
@@ -12,7 +13,7 @@ export async function sendInvitation(req: Request, res: Response, next: NextFunc
   try {
     const { email, role, message } = req.body;
     const invitation = await invitationService.sendInvitation(
-      req.params.orgId,
+      getParam(req, 'orgId'),
       email,
       role,
       message,
@@ -29,7 +30,7 @@ export async function sendInvitation(req: Request, res: Response, next: NextFunc
  */
 export async function listInvitations(req: Request, res: Response, next: NextFunction) {
   try {
-    const invitations = await invitationService.listInvitations(req.params.orgId);
+    const invitations = await invitationService.listInvitations(getParam(req, 'orgId'));
     res.json({ success: true, data: invitations });
   } catch (error) {
     next(error);
@@ -41,7 +42,7 @@ export async function listInvitations(req: Request, res: Response, next: NextFun
  */
 export async function revokeInvitation(req: Request, res: Response, next: NextFunction) {
   try {
-    await invitationService.revokeInvitation(req.params.orgId, req.params.id, req.user!.id);
+    await invitationService.revokeInvitation(getParam(req, 'orgId'), getParam(req, 'id'), req.user!.id);
     res.json({ success: true, message: 'Invitation revoked' });
   } catch (error) {
     next(error);
@@ -53,7 +54,7 @@ export async function revokeInvitation(req: Request, res: Response, next: NextFu
  */
 export async function acceptInvitation(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await invitationService.acceptInvitation(req.params.token, req.user!.id);
+    const result = await invitationService.acceptInvitation(getParam(req, 'token'), req.user!.id);
     res.json({ success: true, message: 'Successfully joined organization', data: result });
   } catch (error) {
     next(error);

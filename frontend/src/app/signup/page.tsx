@@ -79,8 +79,9 @@ export default function SignupPage() {
           );
           router.push("/dashboard");
         }
-      } catch (error: any) {
-        toast.error(error.response?.data?.message || "Google signup failed.");
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Google signup failed.";
+        toast.error(message);
       }
     }
   });
@@ -187,8 +188,8 @@ export default function SignupPage() {
 
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onDetailsSubmit)} className="space-y-4">
-                      {['name', 'email', 'phone', 'password'].map((field) => (
-                        <FormField key={field} control={form.control} name={field as any} render={({ field: formField }) => (
+                      {(['name', 'email', 'phone', 'password'] as const).map((field) => (
+                        <FormField key={field} control={form.control} name={field} render={({ field: formField }) => (
                           <FormItem>
                             <FormControl>
                               <Input 
@@ -204,10 +205,10 @@ export default function SignupPage() {
                       ))}
                       
                       <div className="flex gap-2">
-                        {['male', 'female', 'other'].map(g => (
+                        {(['male', 'female', 'other'] as const).map(g => (
                           <div 
                             key={g} 
-                            onClick={() => form.setValue('gender', g as any)}
+                            onClick={() => form.setValue('gender', g)}
                             className={`flex-1 h-12 flex items-center justify-center rounded-xl cursor-pointer border transition-all ${form.watch('gender') === g ? 'bg-blue-600/20 border-blue-500 text-blue-500 font-medium' : 'bg-white/10 border-white/20 text-zinc-400'}`}
                           >
                             {g.charAt(0).toUpperCase() + g.slice(1)}

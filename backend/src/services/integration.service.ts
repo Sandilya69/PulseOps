@@ -7,6 +7,9 @@ import prisma from '../lib/prisma';
 import { ApiError } from '../middleware/errorHandler.middleware';
 import { activityLogService } from './activityLog.service';
 import axios from 'axios';
+import * as resendService from './resend.service';
+import * as twilioService from './twilio.service';
+
 
 /**
  * Register a new Integration (e.g., Discord Webhook)
@@ -141,3 +144,25 @@ export async function dispatchDiscordAlert(integrationId: string, title: string,
     return false;
   }
 }
+
+/**
+ * CORE LOGIC: Dispatch Email Alert
+ */
+export async function dispatchEmailAlert(email: string, subject: string, htmlContent: string) {
+  return resendService.sendEmail(email, subject, htmlContent);
+}
+
+/**
+ * CORE LOGIC: Dispatch WhatsApp Alert
+ */
+export async function dispatchWhatsAppAlert(phoneNumber: string, message: string) {
+  return twilioService.sendWhatsApp(phoneNumber, message);
+}
+
+/**
+ * CORE LOGIC: Dispatch Voice Call Alert
+ */
+export async function dispatchVoiceCallAlert(phoneNumber: string, message: string) {
+  return twilioService.triggerVoiceCall(phoneNumber, message);
+}
+

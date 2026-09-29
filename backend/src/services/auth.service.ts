@@ -7,8 +7,6 @@ import { hashPassword, comparePassword } from '../utils/hash';
 import { generateTokens, verifyRefreshToken } from '../utils/jwt';
 import { generateUniqueSlug } from '../utils/slug';
 import { OAuth2Client } from 'google-auth-library';
-import { generateTokens, verifyRefreshToken } from '../utils/jwt';
-import { generateUniqueSlug } from '../utils/slug';
 import axios from 'axios';
 import { ApiError } from '../middleware/errorHandler.middleware';
 import { activityLogService } from './activityLog.service';

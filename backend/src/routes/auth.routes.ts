@@ -31,4 +31,7 @@ router.post('/google', authController.googleOAuth);
 // POST /api/auth/github — Verify GitHub Code
 router.post('/github', authController.githubOAuth);
 
+// POST /api/auth/invitations/:token/accept — Accept invitation
+router.post('/invitations/:token/accept', authenticateToken, authController.acceptInvitation);
+
 export default router;

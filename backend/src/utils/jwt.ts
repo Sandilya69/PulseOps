@@ -2,7 +2,7 @@
 // PulseOps CRM - JWT Utilities
 // ============================================
 
-import jwt, { JwtPayload } from 'jsonwebtoken';
+import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
 
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'dev-access-secret-change-me';
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret-change-me';
@@ -15,6 +15,10 @@ interface TokenPayload {
   role: string;
 }
 
+const signOptions: SignOptions = {
+  algorithm: 'HS256',
+};
+
 /**
  * Generate access + refresh token pair
  */
@@ -23,11 +27,13 @@ export function generateTokens(payload: TokenPayload): {
   refreshToken: string;
 } {
   const accessToken = jwt.sign(payload, ACCESS_SECRET, {
-    expiresIn: ACCESS_EXPIRY,
+    ...signOptions,
+    expiresIn: ACCESS_EXPIRY as SignOptions['expiresIn'],
   });
 
   const refreshToken = jwt.sign(payload, REFRESH_SECRET, {
-    expiresIn: REFRESH_EXPIRY,
+    ...signOptions,
+    expiresIn: REFRESH_EXPIRY as SignOptions['expiresIn'],
   });
 
   return { accessToken, refreshToken };

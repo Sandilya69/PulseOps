@@ -15,12 +15,16 @@ import { notFoundHandler } from './middleware/errorHandler.middleware';
 import healthRoutes from './routes/health.routes';
 import authRoutes from './routes/auth.routes';
 import organizationRoutes from './routes/organization.routes';
-import userRoutes from './routes/user.routes';
+import userRoutes, { orgUserRouter } from './routes/user.routes';
 import invitationRoutes from './routes/invitation.routes';
 import ticketRoutes from './routes/ticket.routes';
 import activityLogRoutes from './routes/activityLog.routes';
 import notificationRoutes from './routes/notification.routes';
 import contactRoutes from './routes/contact.routes';
+import incidentRoutes from './routes/incident.routes';
+import monitoredApiRoutes from './routes/monitoredApi.routes';
+import alertRuleRoutes from './routes/alertRule.routes';
+import webhookRoutes from './routes/webhook.routes';
 
 dotenv.config();
 
@@ -43,11 +47,16 @@ app.use('/api', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/organizations/:orgId/users', orgUserRouter);
 app.use('/api/organizations', invitationRoutes);
 app.use('/api/organizations', ticketRoutes);
 app.use('/api/organizations', activityLogRoutes);
 app.use('/api/users', notificationRoutes);
 app.use('/api/organizations', contactRoutes);
+app.use('/api/organizations', incidentRoutes);
+app.use('/api/organizations', monitoredApiRoutes);
+app.use('/api/organizations', alertRuleRoutes);
+app.use('/api', webhookRoutes);
 
 // ── Error Handling ──
 app.use(notFoundHandler);

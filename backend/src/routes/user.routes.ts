@@ -17,6 +17,9 @@ router.use(authenticateToken);
 // PUT /api/users/profile — Update own profile
 router.put('/profile', userController.updateProfile);
 
+// PUT /api/users/me/password — Change own password
+router.put('/me/password', userController.changePassword);
+
 // ── Organization User Routes ──
 // Mounted at /api/organizations/:orgId/users via app.ts re-export
 

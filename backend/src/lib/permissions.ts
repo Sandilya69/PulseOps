@@ -13,8 +13,10 @@ export type Permission =
   | 'api.delete'
   | 'api.view'
   // Incident Management
+  | 'incident.create'
   | 'incident.acknowledge'
   | 'incident.resolve'
+  | 'incident.escalate'
   | 'incident.view'
   | 'incident.delete'
   | 'incident.note_add'
@@ -65,8 +67,10 @@ const permissionMap: Record<Permission, UserRole[]> = {
   'api.view':     ['owner', 'admin', 'member', 'viewer', 'on_call_engineer'],
 
   // ── Incident Management ──
+  'incident.create':       ['owner', 'admin', 'member', 'on_call_engineer'],
   'incident.acknowledge': ['owner', 'admin', 'member', 'on_call_engineer'],
   'incident.resolve':     ['owner', 'admin', 'member', 'on_call_engineer'],
+  'incident.escalate':    ['owner', 'admin', 'member', 'on_call_engineer'],
   'incident.view':        ['owner', 'admin', 'member', 'viewer', 'on_call_engineer'],
   'incident.delete':      ['owner', 'admin'],
   'incident.note_add':    ['owner', 'admin', 'member', 'on_call_engineer'],
