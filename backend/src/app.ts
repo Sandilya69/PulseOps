@@ -7,9 +7,11 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import swaggerUi from 'swagger-ui-express';
 
 import { errorHandler } from './middleware/errorHandler.middleware';
 import { notFoundHandler } from './middleware/errorHandler.middleware';
+import { registry } from './lib/swagger';
 
 // Import routes
 import healthRoutes from './routes/health.routes';
@@ -26,6 +28,20 @@ import monitoredApiRoutes from './routes/monitoredApi.routes';
 import alertRuleRoutes from './routes/alertRule.routes';
 import webhookRoutes from './routes/webhook.routes';
 
+// Import OpenAPI schemas
+import './routes/schemas/auth.openapi';
+import './routes/schemas/organization.openapi';
+import './routes/schemas/user.openapi';
+import './routes/schemas/invitation.openapi';
+import './routes/schemas/ticket.openapi';
+import './routes/schemas/activityLog.openapi';
+import './routes/schemas/notification.openapi';
+import './routes/schemas/contact.openapi';
+import './routes/schemas/incident.openapi';
+import './routes/schemas/monitoredApi.openapi';
+import './routes/schemas/alertRule.openapi';
+import './routes/schemas/webhook.openapi';
+
 dotenv.config();
 
 const app = express();
@@ -41,6 +57,61 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+// ── API Documentation ──
+if (process.env.NODE_ENV !== 'production') {
+  const swaggerDocument = registry.generateDocument({
+    openapi: '3.1.0',
+    info: {
+      title: 'PulseOps CRM API',
+      version: '1.0.0',
+      description: 'API documentation for PulseOps CRM - Team collaboration platform for infrastructure monitoring',
+      contact: {
+        name: 'PulseOps Support',
+        email: 'support@pulseops.example.com',
+      },
+      license: {
+        name: 'MIT',
+        url: 'https://opensource.org/licenses/MIT',
+      },
+    },
+    servers: [
+      { url: 'http://localhost:5000/api', description: 'Development server' },
+      { url: 'https://api.pulseops.example.com/api', description: 'Production server' },
+    ],
+    tags: [
+      { name: 'Authentication', description: 'User authentication and authorization' },
+      { name: 'Organizations', description: 'Organization management' },
+      { name: 'Users', description: 'User management and roles' },
+      { name: 'Invitations', description: 'Team member invitations' },
+      { name: 'Tickets', description: 'Support ticket system' },
+      { name: 'Activity Logs', description: 'Audit trail and activity tracking' },
+      { name: 'Notifications', description: 'User notifications and preferences' },
+      { name: 'Contacts', description: 'External stakeholder contacts' },
+      { name: 'Incidents', description: 'Incident management and collaboration' },
+      { name: 'Monitored APIs', description: 'API monitoring configuration' },
+      { name: 'Alert Rules', description: 'Alert rule configuration' },
+      { name: 'Webhooks', description: 'Incoming webhook handlers' },
+    ],
+  });
+  
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'PulseOps CRM API Docs',
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      filter: true,
+      showExtensions: true,
+      showCommonExtensions: true,
+    },
+  }));
+  
+  // JSON endpoint for programmatic access
+  app.get('/api/docs.json', (req, res) => {
+    res.json(swaggerDocument);
+  });
+}
 
 // ── API Routes ──
 app.use('/api', healthRoutes);
