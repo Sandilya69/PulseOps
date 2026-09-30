@@ -9,31 +9,26 @@ registry.registerComponent('securitySchemes', 'bearerAuth', {
   bearerFormat: 'JWT',
 });
 
-registry.registerComponent('schemas', 'Error', {
-  type: 'object',
-  properties: {
-    statusCode: { type: 'integer', example: 400 },
-    code: { type: 'string', example: 'BAD_REQUEST' },
-    message: { type: 'string', example: 'Invalid input' },
-    details: { type: 'object', nullable: true },
-  },
+const ErrorSchema = z.object({
+  statusCode: z.number().int().openapi({ example: 400 }),
+  code: z.string().openapi({ example: 'BAD_REQUEST' }),
+  message: z.string().openapi({ example: 'Invalid input' }),
+  details: z.record(z.any()).nullable().optional(),
 });
 
-registry.registerComponent('schemas', 'PaginatedResponse', {
-  type: 'object',
-  properties: {
-    data: { type: 'array', items: { type: 'object' } },
-    meta: {
-      type: 'object',
-      properties: {
-        page: { type: 'integer', example: 1 },
-        limit: { type: 'integer', example: 20 },
-        total: { type: 'integer', example: 100 },
-        totalPages: { type: 'integer', example: 5 },
-      },
-    },
-  },
+registry.register('Error', ErrorSchema);
+
+const PaginatedResponseSchema = z.object({
+  data: z.array(z.any()),
+  meta: z.object({
+    page: z.number().int().openapi({ example: 1 }),
+    limit: z.number().int().openapi({ example: 20 }),
+    total: z.number().int().openapi({ example: 100 }),
+    totalPages: z.number().int().openapi({ example: 5 }),
+  }),
 });
+
+registry.register('PaginatedResponse', PaginatedResponseSchema);
 
 export const commonSchemas = {
   IdParam: z.object({
@@ -82,13 +77,13 @@ export function createPaginatedApiResponse<T extends z.ZodTypeAny>(itemSchema: T
 }
 
 export const errorResponses = {
-  400: { description: 'Bad Request', content: { 'application/json': { schema: z.lazy(() => registry.components.schemas['Error']!) } } },
-  401: { description: 'Unauthorized', content: { 'application/json': { schema: z.lazy(() => registry.components.schemas['Error']!) } } },
-  403: { description: 'Forbidden', content: { 'application/json': { schema: z.lazy(() => registry.components.schemas['Error']!) } } },
-  404: { description: 'Not Found', content: { 'application/json': { schema: z.lazy(() => registry.components.schemas['Error']!) } } },
-  409: { description: 'Conflict', content: { 'application/json': { schema: z.lazy(() => registry.components.schemas['Error']!) } } },
-  422: { description: 'Unprocessable Entity', content: { 'application/json': { schema: z.lazy(() => registry.components.schemas['Error']!) } } },
-  500: { description: 'Internal Server Error', content: { 'application/json': { schema: z.lazy(() => registry.components.schemas['Error']!) } } },
+  400: { description: 'Bad Request', content: { 'application/json': { schema: ErrorSchema } } },
+  401: { description: 'Unauthorized', content: { 'application/json': { schema: ErrorSchema } } },
+  403: { description: 'Forbidden', content: { 'application/json': { schema: ErrorSchema } } },
+  404: { description: 'Not Found', content: { 'application/json': { schema: ErrorSchema } } },
+  409: { description: 'Conflict', content: { 'application/json': { schema: ErrorSchema } } },
+  422: { description: 'Unprocessable Entity', content: { 'application/json': { schema: ErrorSchema } } },
+  500: { description: 'Internal Server Error', content: { 'application/json': { schema: ErrorSchema } } },
 };
 
 export function registerPath(

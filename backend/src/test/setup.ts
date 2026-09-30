@@ -217,6 +217,15 @@ afterAll(() => {
   vi.restoreAllMocks();
 });
 
+declare global {
+  var testUtils: {
+    createMockUser: (overrides?: any) => any;
+    createMockOrg: (overrides?: any) => any;
+    createMockTicket: (overrides?: any) => any;
+    createMockIncident: (overrides?: any) => any;
+  };
+}
+
 global.testUtils = {
   createMockUser: (overrides = {}) => ({
     id: 'test-user-id',

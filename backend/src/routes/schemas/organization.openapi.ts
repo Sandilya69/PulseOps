@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { registry, registerPath, commonSchemas, createApiResponse, createPaginatedApiResponse } from '../lib/swagger';
+import { registry, registerPath, commonSchemas, createApiResponse, createPaginatedApiResponse } from '../../lib/swagger';
 
 const OrganizationCreate = z.object({
   name: z.string().min(2).max(255).openapi({ example: 'Acme Corporation' }),

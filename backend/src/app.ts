@@ -60,7 +60,7 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // ── API Documentation ──
 if (process.env.NODE_ENV !== 'production') {
-  const swaggerDocument = registry.generateDocument({
+  const swaggerDocument = {
     openapi: '3.1.0',
     info: {
       title: 'PulseOps CRM API',
@@ -79,6 +79,17 @@ if (process.env.NODE_ENV !== 'production') {
       { url: 'http://localhost:5000/api', description: 'Development server' },
       { url: 'https://api.pulseops.example.com/api', description: 'Production server' },
     ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+      schemas: (registry as any).definitions,
+    },
+    paths: (registry as any).definitions?.paths || {},
     tags: [
       { name: 'Authentication', description: 'User authentication and authorization' },
       { name: 'Organizations', description: 'Organization management' },
@@ -93,7 +104,7 @@ if (process.env.NODE_ENV !== 'production') {
       { name: 'Alert Rules', description: 'Alert rule configuration' },
       { name: 'Webhooks', description: 'Incoming webhook handlers' },
     ],
-  });
+  };
   
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
     customCss: '.swagger-ui .topbar { display: none }',
